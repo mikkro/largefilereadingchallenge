@@ -1,0 +1,21 @@
+springdoc:
+  api-docs:
+    path: /api-docs
+spring:
+  datasource:
+    username: sa
+    url: jdbc:h2:mem:testdb
+    driverClassName: org.h2.Driver
+    password: password
+  h2:
+    console:
+      enabled: 'true'
+      settings:
+        web-allow-others: 'true'
+        trace: 'false'
+      path: /h2-console
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    defer-datasource-initialization: 'true'
+application:
+  base-uri: http://localhost:8080
