@@ -4,6 +4,13 @@
 
 By calling the @POST /temperatures endpoint with the URL to the file to be processed, the application creates a background job. The response header contains the task ID.
 
+Example request: 
+```
+{
+    "fileName": "https://mikolaj-kyotu.s3.eu-north-1.amazonaws.com/example_file.csv"
+}
+```
+
 Task statuses can be found in @GET /tasks endpoint.
 
 After processing the task, its result can be found at the @GET /tasks/{id}/statistics endpoint.
