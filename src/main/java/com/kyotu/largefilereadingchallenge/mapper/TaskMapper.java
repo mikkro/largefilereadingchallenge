@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class TaskMapper {
 
-    public TaskStatusResponse map(final Task task){
-        return new TaskStatusResponse(task.getId(), task.getTaskStatus(), task.getLastUpdate(), task.getMessage());
+    public TaskStatusResponse mapTaskStatus(final Task task) {
+        return new TaskStatusResponse(task.getId(), task.getTaskStatus(), task.getLastUpdate(), task.getFileConfiguration().getPath(), task.getCity());
     }
 }

@@ -2,32 +2,24 @@
 
 ## How to use?
 
-By calling the @POST /temperatures endpoint with the URL to the file to be processed, the application creates a background job. The response header contains the task ID.
+Set up path to file to be processed by calling the @POST /configuration.
 
 Example request: 
 ```
 {
-    "fileName": "https://mikolaj-kyotu.s3.eu-north-1.amazonaws.com/example_file.csv"
+    "filePath": "/Users/mikolaj/Desktop/example_file.csv"
 }
 ```
 
-Task statuses can be found in @GET /tasks endpoint.
-
-After processing the task, its result can be found at the @GET /tasks/{id}/statistics endpoint.
-
-Additionally, there is a background job that clears completed tasks.
-
+Use the @GET /statistics/{city} endpoint to get statistics for a given city.
+The first call creates a background job and the file is processed.
+You can monitor background job with an endpoint @GET /tasks/{id}.
+After the file is processed, the endpoint returns the result.
+If the file has changed between requests, it is reprocessed.
 
 ## How to run application locally?
 
-You can build docker image and run it:
-
-```
-docker build -t kyotu .
-docker run -m 512m --memory-reservation=256m -p 8080:8080 -it kyotu exec
-```
-
-Alternatively, you can run it using Gradle Wrapper:
+You can run it using Gradle Wrapper:
 
 ```
 ./gradlew bootRun

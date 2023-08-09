@@ -13,9 +13,8 @@ import java.util.List;
 @Component
 @Slf4j
 public class ImportScheduler {
-
-    final private TaskRepository taskRepository;
-    final private ImportService importService;
+    private final TaskRepository taskRepository;
+    private final ImportService importService;
 
     public ImportScheduler(final TaskRepository taskRepository,
                            final ImportService importService) {
@@ -23,7 +22,7 @@ public class ImportScheduler {
         this.importService = importService;
     }
 
-    @Scheduled(fixedDelay = 5000)
+    @Scheduled(fixedDelay = 3000)
     public void scheduleFixedDelayTask() {
         final List<Task> tasks = taskRepository.findFirst100ByTaskStatusOrderByCreateDateAsc(TaskStatus.PENDING);
         log.debug("Starting processing of {} tasks.", tasks.size());

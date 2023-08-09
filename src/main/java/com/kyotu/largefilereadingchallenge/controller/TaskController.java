@@ -1,10 +1,7 @@
 package com.kyotu.largefilereadingchallenge.controller;
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.kyotu.largefilereadingchallenge.controller.dto.StatisticsResponse;
 import com.kyotu.largefilereadingchallenge.controller.dto.TaskStatusResponse;
-import com.kyotu.largefilereadingchallenge.service.StatisticsService;
 import com.kyotu.largefilereadingchallenge.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,24 +18,20 @@ import java.util.List;
 public class TaskController {
 
     private final TaskService taskService;
-    private final StatisticsService statisticsService;
 
-    public TaskController(final TaskService taskService,
-                          final StatisticsService statisticsService) {
+    public TaskController(final TaskService taskService) {
         this.taskService = taskService;
-        this.statisticsService = statisticsService;
-    }
-
-
-    @GetMapping("/{taskId}/statistics")
-    @Operation(description = "Get task details.")
-    public List<StatisticsResponse> getStatisticsForTask(@PathVariable final Long taskId) throws JsonProcessingException {
-        return statisticsService.getStatisticsForTask(taskId);
     }
 
     @GetMapping
     @Operation(description = "Get task statuses.")
     public List<TaskStatusResponse> getTasks() {
         return taskService.getTasksStatus();
+    }
+
+    @GetMapping(path = "{id}")
+    @Operation(description = "Get task status.")
+    public TaskStatusResponse getTask(@PathVariable Long id) {
+        return taskService.getTaskStatus(id);
     }
 }

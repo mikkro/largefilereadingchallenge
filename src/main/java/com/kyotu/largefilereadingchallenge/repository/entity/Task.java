@@ -1,13 +1,16 @@
 package com.kyotu.largefilereadingchallenge.repository.entity;
 
 import com.kyotu.largefilereadingchallenge.repository.TaskStatus;
-import jakarta.annotation.Nullable;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,7 +28,9 @@ public class Task {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String uri;
+    @ManyToOne
+    @JoinColumn(name = "file_configuration_id")
+    private FileConfiguration fileConfiguration;
 
     private LocalDateTime createDate;
 
@@ -34,9 +39,11 @@ public class Task {
     @Enumerated(EnumType.STRING)
     private TaskStatus taskStatus;
 
-    @Nullable
-    private String message;
+    private Long fileSize;
 
-    private boolean isChanged;
+    private String city;
+
+    @OneToOne(mappedBy = "task", cascade = CascadeType.ALL)
+    private Statistics statistics;
 
 }

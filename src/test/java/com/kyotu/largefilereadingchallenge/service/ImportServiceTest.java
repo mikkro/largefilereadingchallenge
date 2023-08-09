@@ -1,95 +1,85 @@
 package com.kyotu.largefilereadingchallenge.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.kyotu.largefilereadingchallenge.controller.dto.StatisticsResponse;
-import com.kyotu.largefilereadingchallenge.controller.dto.TaskStatusResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kyotu.largefilereadingchallenge.mapper.StatisticsMapper;
 import com.kyotu.largefilereadingchallenge.repository.TaskStatus;
+import com.kyotu.largefilereadingchallenge.repository.entity.FileConfiguration;
 import com.kyotu.largefilereadingchallenge.repository.entity.Task;
+import com.kyotu.largefilereadingchallenge.service.dto.StatisticsDto;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
-import java.util.List;
+import java.io.File;
+import java.io.PrintWriter;
+import java.time.LocalDateTime;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-@SpringBootTest
-class ImportServiceTest {
+@ExtendWith(MockitoExtension.class)
+public class ImportServiceTest {
 
-    @Autowired
-    private ImportService importService;
+    @Mock
+    private StatisticsMapper statisticsMapper;
 
-    @Autowired
+    @Mock
     private TaskService taskService;
 
-    @Autowired
-    private StatisticsService statisticsService;
+    @Mock
+    private FileConfigurationService fileConfigurationService;
 
-    @Test
-    void shouldImportFailWithNotFoundMessage() {
-        Task task = new Task();
-        task.setId(1L);
-        task.setUri("https://example.com/test.csv");
 
-        importService.startImport(task);
-        List<TaskStatusResponse> savedTasks = taskService.getTasksStatus();
+    private ImportService importService;
 
-        assertThat(savedTasks.size()).isEqualTo(1);
-        assertThat(savedTasks.get(0).id()).isEqualTo(task.getId());
-        assertThat(savedTasks.get(0).taskStatus()).isEqualTo(TaskStatus.FAILED);
-        assertThat(savedTasks.get(0).message()).isEqualTo(String.format("%s", task.getUri()));
-
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    @BeforeEach
+    public void init() {
+        importService = new ImportService(this.statisticsMapper, this.taskService, this.objectMapper, this.fileConfigurationService);
     }
 
     @Test
-    void shouldImportFailWithWrongUrlMessage() {
-        Task task = new Task();
-        task.setId(1L);
-        task.setUri("test");
+    public void testStartImport_Success() throws Exception {
+        File testFile = File.createTempFile("testFile", ".txt");
 
-        importService.startImport(task);
-        List<TaskStatusResponse> savedTasks = taskService.getTasksStatus();
+        String expectedResult = objectMapper.writeValueAsString(Map.of(2023, new StatisticsDto(2, 50.0)));
 
-        assertThat(savedTasks.size()).isEqualTo(1);
-        assertThat(savedTasks.get(0).id()).isEqualTo(task.getId());
-        assertThat(savedTasks.get(0).taskStatus()).isEqualTo(TaskStatus.FAILED);
-        assertThat(savedTasks.get(0).message()).isEqualTo(String.format("no protocol: %s", task.getUri()));
+        try (PrintWriter writer = new PrintWriter(testFile)) {
+            writer.println("""
+                    SampleCity;2022-01-01;20.0
+                    SampleCity;2022-01-01;30.0
+                    """);
+        }
 
-    }
+        final Task task = Task.builder()
+                .id(1L)
+                .city("SampleCity")
+                .build();
+        when(taskService.updateTaskStatus(eq(task), eq(TaskStatus.IN_PROGRESS))).thenReturn(task);
 
-    @Test
-    void shouldImportSuccess() throws JsonProcessingException {
-        Task task = new Task();
-        task.setId(1L);
-        task.setUri("https://mikolaj-kyotu.s3.eu-north-1.amazonaws.com/example_file.csv");
+        FileConfiguration fileConfiguration = new FileConfiguration();
+        fileConfiguration.setPath(testFile.getAbsolutePath());
+        when(fileConfigurationService.getFileConfig()).thenReturn(fileConfiguration);
 
-        List<StatisticsResponse> expectedResponse = List.of(
-                new StatisticsResponse(2018, BigDecimal.valueOf(15.2)),
-                new StatisticsResponse(2019, BigDecimal.valueOf(14.9)),
-                new StatisticsResponse(2020, BigDecimal.valueOf(15.3)),
-                new StatisticsResponse(2021, BigDecimal.valueOf(14.8)),
-                new StatisticsResponse(2022, BigDecimal.valueOf(15.1)),
-                new StatisticsResponse(2023, BigDecimal.valueOf(15.0)));
+        when(statisticsMapper.mapDate(anyString())).thenReturn(LocalDateTime.now());
 
 
         importService.startImport(task);
-        List<TaskStatusResponse> savedTasks = taskService.getTasksStatus();
-        List<StatisticsResponse> statistics = statisticsService.getStatisticsForTask(task.getId());
+        ArgumentCaptor<Task> savedTaskCaptor = ArgumentCaptor.forClass(Task.class);
+        verify(taskService, times(1)).updateTaskStatus(savedTaskCaptor.capture(), eq(TaskStatus.FINISHED));
+        String capturedSavedTask = savedTaskCaptor.getValue().getStatistics().getResult();
 
-        assertThat(savedTasks.size()).isEqualTo(1);
-        assertThat(savedTasks.get(0).id()).isEqualTo(task.getId());
-        assertThat(savedTasks.get(0).taskStatus()).isEqualTo(TaskStatus.FINISHED);
-        assertThat(savedTasks.get(0).message()).isEqualTo(null);
+        assertThat(capturedSavedTask).isEqualTo(expectedResult);
 
-        assertThat(statistics.size()).isEqualTo(expectedResponse.size());
-
-        assertThat(statistics.get(0)).isEqualTo(expectedResponse.get(0));
-        assertThat(statistics.get(1)).isEqualTo(expectedResponse.get(1));
-        assertThat(statistics.get(2)).isEqualTo(expectedResponse.get(2));
-        assertThat(statistics.get(3)).isEqualTo(expectedResponse.get(3));
-        assertThat(statistics.get(4)).isEqualTo(expectedResponse.get(4));
-
+        testFile.delete();
     }
 
 }

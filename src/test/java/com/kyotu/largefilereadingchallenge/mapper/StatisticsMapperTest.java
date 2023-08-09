@@ -1,5 +1,6 @@
 package com.kyotu.largefilereadingchallenge.mapper;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -12,8 +13,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(SpringExtension.class)
 class StatisticsMapperTest {
 
-    private final StatisticsMapper statisticsMapper = new StatisticsMapper();
-
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final StatisticsMapper statisticsMapper = new StatisticsMapper(objectMapper);
 
 
     @Test
